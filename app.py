@@ -3,11 +3,38 @@ from dotenv import load_dotenv
 import os
 import requests as requests
 import random
+import sys
 import logging
+from logging.handlers import RotatingFileHandler
 
 # Create logger
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename='/config/output.log', encoding='utf-8', format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# Log format
+formatter = logging.Formatter(
+    '%(asctime)s %(levelname)s %(message)s',
+    '%m/%d/%Y %I:%M:%S %p'
+)
+
+# ---- STDOUT Handler (Docker container logs) ----
+stdout_handler = logging.StreamHandler(sys.stdout)
+stdout_handler.setLevel(logging.INFO)
+stdout_handler.setFormatter(formatter)
+logger.addHandler(stdout_handler)
+
+# ---- Rotating File Handler (/config/output.log) ----
+file_handler = RotatingFileHandler(
+    '/config/output.log',
+    maxBytes=10 * 1024 * 1024,  # 10MB
+    backupCount=5
+)
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+# Optional: prevent duplicate logs if something else configures logging
+logger.propagate = False
 
 # Load .env
 load_dotenv(dotenv_path="/config/.env")
